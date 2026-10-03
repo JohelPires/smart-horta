@@ -34,19 +34,19 @@ Milestones:
 ## Phase 1 — Electronics fundamentals (breadboard + theory)
 🧠 Start in Wokwi; no risk of burning parts. Learn by measuring.
 **Deliverable:** a breadboard circuit with an LED + resistor + button that you can explain.
-- [ ] 🧠 Voltage (V), current (A), resistance (Ω), Ohm's law `V = I·R`
-- [ ] 🧠 Power `P = V·I`; why a resistor limits current to protect an LED
-- [ ] 🧠 Digital logic: HIGH/LOW. **ESP32 GPIO = 3.3V, NOT 5V-tolerant** ⚠️ (5V into a pin kills it)
-- [ ] 🧠 Ground: all parts must share a common ground (GND) ⚠️
-- [ ] Build an LED circuit: ESP32 GPIO → 330Ω resistor → LED → GND (Wokwi `wokwi-led`, `wokwi-resistor`)
-- [ ] Build a button circuit with a **pull-up/pull-down** resistor; learn floating inputs ⚠️
-- [ ] 🧠 Current limits: each GPIO ≈ 12mA safe / 40mA absolute; never power motors from a GPIO ⚠️
-- [ ] 🧠 Voltage divider (used later by resistive sensors and level shifting)
-- [ ] 🧠 Why inductive loads (pumps, solenoids) need a **flyback diode**
-- [ ] 🧠 Isolation: optocouplers/relays keep high voltage away from the ESP32
-- [ ] ⚠️ Safety rule: never switch mains (110/220V) on a breadboard
+- [x] 🧠 Voltage (V), current (A), resistance (Ω), Ohm's law `V = I·R` → `docs/electronics-notes.md` §1
+- [x] 🧠 Power `P = V·I`; why a resistor limits current to protect an LED → §2
+- [x] 🧠 Digital logic: HIGH/LOW. **ESP32 GPIO = 3.3V, NOT 5V-tolerant** ⚠️ → §3
+- [x] 🧠 Ground: all parts must share a common ground (GND) ⚠️ → §4
+- [ ] Build an LED circuit in wokwi.com: ESP32 DevKit GPIO 4 → 330Ω resistor → red LED → GND (parts: `wokwi-led`, `wokwi-resistor`)
+- [ ] Build a button circuit in wokwi.com: pushbutton GPIO 23 → GND, enable internal pull-up (released=1, pressed=0) ⚠️ learn floating inputs
+- [x] 🧠 Current limits: each GPIO ≈ 12mA safe / 40mA absolute; never power motors from a GPIO ⚠️ → §5
+- [x] 🧠 Voltage divider (used later by resistive sensors and level shifting) → §6
+- [x] 🧠 Why inductive loads (pumps, solenoids) need a **flyback diode** → §8
+- [x] 🧠 Isolation: optocouplers/relays keep high voltage away from the ESP32 → §9
+- [x] ⚠️ Safety rule: never switch mains (110/220V) on a breadboard → §10
 
-**Exit:** explain in `docs/electronics-notes.md` how an LED + resistor + button circuit works.
+**Exit:** build both circuits in wokwi.com, then re-read `docs/electronics-notes.md` §2 + §7 and confirm you could explain them to someone else.
 
 ---
 
