@@ -1,0 +1,7 @@
+# ESP-IDF build output
+sdkconfig
+sdkconfig.old
+build/
+managed_components/
+dependencies.lock
+

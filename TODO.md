@@ -20,13 +20,14 @@ Milestones:
 ## Phase 0 — Environment & tooling
 🧠 ESP-IDF is a toolchain + build system; `idf.py` wraps CMake/ninja/esptool.
 **Deliverable:** `idf.py --version` works in a fresh shell.
-- [ ] Install ESP-IDF v5.x and run `install.sh esp32`, then `source export.sh` 🧠
-- [ ] Install VS Code + extensions: Espressif IDF, Wokwi Simulator, Serial Monitor
-- [ ] `pip install idf-wokwi` (only for `idf.py wokwi`; needs ESP-IDF ≥ 6.0)
-- [ ] Create Wokwi account; put token in `WOKWI_CLI_TOKEN`
-- [ ] Install Python 3.11+, `git`, and Mosquitto broker
-- [ ] Scaffold repo dirs: `firmware/`, `host/`, `docs/`, `emulation/`
-- [ ] `cd firmware && idf.py set-target esp32`
+- [x] Install ESP-IDF v5.5.5 (`~/esp-idf`), run `install.sh esp32`, auto-source `export.sh` from `~/.bashrc` 🧠
+- [x] Install VS Code + extensions: Espressif IDF, Wokwi Simulator, Serial Monitor
+- [x] Use standalone `wokwi-cli` (installed at `~/bin/wokwi-cli`) — `idf.py wokwi` needs IDF ≥ 6.0, skipped
+- [ ] Create Wokwi account; VS Code extension license (F1 -> "Wokwi: Request a new License")
+- [ ] `export WOKWI_CLI_TOKEN=...` (for CI later; add to `~/.bashrc`, never commit)
+- [x] Install Python 3.11+, `git` (Mosquitto deferred to Phase 7)
+- [x] Scaffold repo dirs: `firmware/`, `host/`, `docs/`, `emulation/`
+- [x] `cd firmware && idf.py set-target esp32`
 
 ---
 
@@ -60,7 +61,7 @@ Milestones:
 - [ ] Create `firmware/diagram.json` (ESP32 DevKit + LED + resistor)
 - [ ] Write blink code with `gpio_set_level` / `gpio_set_direction`; `idf.py build`
 - [ ] Run via VS Code "Wokwi: Start Simulator" and confirm the LED blinks
-- [ ] Run `idf.py wokwi --timeout 10000 --expect-text "..."` and see it pass
+- [ ] Run `wokwi-cli . --timeout 10000 --expect-text "..."` and see it pass
 **Exit:** M1 done; clean build + simulated blink.
 
 ---

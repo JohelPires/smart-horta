@@ -6,11 +6,17 @@ Monorepo, currently being scaffolded — this file is the source of truth for
 intended layout and commands.
 
 ## Stack (decided)
-- Firmware: ESP-IDF (C, CMake, `idf.py`), target `esp32`.
+- Firmware: ESP-IDF (C, CMake, `idf.py`), target `esp32`. Installed at `~/esp-idf`
+  (v5.5.5); toolchain in `~/.espressif`. Source `~/esp-idf/export.sh` in each new
+  shell (auto-sourced from `~/.bashrc`).
 - Simulation: Wokwi — the only option that emulates ESP32 WiFi + MQTT end to end.
   Renode was evaluated and rejected: it has no ESP32 SoC model (only a generic
   `xtensa-sample-controller`); QEMU runs ESP-IDF but has no WiFi.
-- Host/RPi: Python + MQTT (`paho-mqtt`), broker = Mosquitto.
+  Using ESP-IDF v5.5.5, NOT `idf.py wokwi` (idf-wokwi requires ESP-IDF >= 6.0):
+  simulate via the Wokwi VS Code extension (license: F1 -> "Wokwi: Request a new
+  License") or the standalone `wokwi-cli` (`~/bin/wokwi-ci` token = `WOKWI_CLI_TOKEN`).
+- Host/RPi: Python + MQTT (`paho-mqtt`), broker = Mosquitto (install deferred to
+  Phase 7; per-tool Python CLIs go through `pipx` — system pip is PEP 668-locked).
 
 ## Layout (target)
 - `firmware/` — ESP-IDF project: `CMakeLists.txt`, `sdkconfig.defaults`,
@@ -24,7 +30,7 @@ Firmware (run from `firmware/`; source ESP-IDF `export.sh` in each new shell):
 - `idf.py set-target esp32`
 - `idf.py build`                      # required before any simulation
 - `idf.py -p /dev/ttyUSB0 flash monitor`
-- `idf.py wokwi`                      # needs `pip install idf-wokwi` + ESP-IDF >= 6.0
+- `wokwi-cli . --timeout 10000`       # headless sim/CI (not `idf.py wokwi`)
 
 Host:
 - `python -m venv .venv && source .venv/bin/activate`

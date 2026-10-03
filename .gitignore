@@ -1,0 +1,24 @@
+# ESP-IDF / build artifacts
+firmware/build/
+firmware/sdkconfig.old
+firmware/dependencies.lock
+firmware/managed_components/
+
+# Wokwi CI artifacts
+*.vcd
+*.pcap
+wokwi-serial.log
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Secrets / local env
+.env
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
