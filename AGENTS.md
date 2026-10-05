@@ -1,9 +1,11 @@
 # AGENTS.md
 
-ESP32 smart-gardening controller: reads soil/water/climate sensors, drives
-irrigation valves, publishes telemetry to a computer/Raspberry Pi over MQTT.
-Monorepo, currently being scaffolded — this file is the source of truth for
-intended layout and commands.
+ESP32 smart-gardening controller: reads soil/water/rain/tank-level sensors,
+drives irrigation valves, shows status on an I2C OLED, publishes telemetry to
+a computer/Raspberry Pi over MQTT and serves a web dashboard from the host.
+Monorepo — this file is the source of truth for intended layout and commands.
+The full (PT-BR) architecture reference lives in `docs/architecture.md` and
+the MQTT contract in `docs/mqtt-topics.md`; keep all three in sync.
 
 ## Stack (decided)
 - Firmware: ESP-IDF (C, CMake, `idf.py`), target `esp32`. Installed at `~/esp-idf`
@@ -17,14 +19,15 @@ intended layout and commands.
   simulate via the Wokwi VS Code extension (license: F1 -> "Wokwi: Request a new
   License") or the standalone `wokwi-cli` (`~/bin/wokwi-ci` token = `WOKWI_CLI_TOKEN`).
 - Host/RPi: Python + MQTT (`paho-mqtt`), broker = Mosquitto (install deferred to
-  Phase 7; per-tool Python CLIs go through `pipx` — system pip is PEP 668-locked).
+  Phase 9; per-tool Python CLIs go through `pipx` — system pip is PEP 668-locked).
 
 ## Layout (target)
 - `firmware/` — ESP-IDF project: `CMakeLists.txt`, `sdkconfig.defaults`,
-  `main/`, `components/` (hal, sensors, irrigation, mqtt), `wokwi.toml`,
-  `diagram.json`, `chips/`.
-- `host/` — Python package: MQTT subscriber, storage, dashboard/CLI.
-- `docs/` — wiring, calibration, MQTT topic reference.
+  `main/`, `components/` (hal, sensors, irrigation, ui_oled, config, network,
+  mqtt), `wokwi.toml`, `diagram.json`, `chips/`.
+- `host/` — Python package: MQTT subscriber (paho-mqtt), SQLite storage,
+  web dashboard/scheduler (Flask), CLI.
+- `docs/` — `architecture.md`, `mqtt-topics.md`, wiring, calibration.
 
 ## Commands
 Firmware (run `idfenv` once per new shell to activate ESP-IDF; then from
@@ -57,17 +60,32 @@ Host:
   `host.wokwi.internal:1883`. HTTP server inside ESP32 needs the Private Gateway.
 - Parts: wokwi-dht22 (use "DHT sensor library for ESPx"), wokwi-ntc-temperature-sensor,
   wokwi-potentiometer / wokwi-slide-potentiometer (analog soil-moisture proxy),
-  wokwi-relay-module (pump/valve; npn = active-high), wokwi-servo, wokwi-hc-sr04.
+  wokwi-relay-module (pump/valve; npn = active-high), wokwi-servo, wokwi-hc-sr04,
+  wokwi-ssd1306 (I2C OLED, SDA=21/SCL=22).
   No native soil-moisture part: use a pot or a custom WASM chip in `chips/` (`[[chip]]`).
 - Limits: no Bluetooth, no MCPWM, I2S in progress, CPU capped ~8 MHz.
   CI free tier 50 sim-min/month — keep tests short with `--timeout`/`--expect-text`.
 
 ## Constraints / gotchas
+- Architecture model: ESP32 decides locally (edge-autonomous). Schedule and
+  thresholds persist in NVS; irrigation keeps running on the weekly schedule
+  even without WiFi. The host is for monitoring/scheduling/history only.
+- Irrigation ON triggers: physical button (GPIO), weekly schedule, sensor
+  threshold (soil/air humidity), MQTT command. OFF paths: user timer
+  (`max_run_s`), same button again (highest priority, cancels anything),
+  rain event, MQTT command. Rain beats automatic triggers; a manual ON during
+  rain is allowed but capped by `max_run_s`.
+- Only `components/irrigation` touches the valve relay; all sources go
+  through its state machine (IDLE → IRRIGATING → COOLDOWN).
 - All sensor/actuator access goes behind the `hal` component so mock/diagram parts
   and real hardware share the same application code.
 - Irrigation must fail safe (valves closed) on init error or watchdog.
-- `diagram.json` pin numbers must match `components/hal/include/board.h`.
-- MQTT topics: `horta/<device_id>/telemetry`, `horta/<device_id>/cmd`.
+- `diagram.json` pin numbers must match `components/hal/include/board.h`
+  (target pin map is in `docs/architecture.md` §4).
+- MQTT topics prefix per device: `horta/<device_id>/`; full topic list,
+  payload schemas, QoS and ack semantics in `docs/mqtt-topics.md`.
+- Only ADC1 pins (GPIO32–39) for analog sensors: ADC2 is unavailable with
+  WiFi on. Weekly schedule time comes from SNTP.
 - Do not commit generated `sdkconfig`; keep defaults in `sdkconfig.defaults`.
 
 ## Verify before claiming done

@@ -1,214 +1,282 @@
-# Smart Garden — Roadmap / TODO
+# Smart Horta — Roadmap / TODO
 
-ESP32 smart-gardening controller. Written for a backend dev ramping up on
-electronics, C, and embedded. Work top to bottom; each phase has a **Deliverable**
-and **Exit criteria** you can verify in Wokwi before touching real hardware.
+Controlador de irrigação ESP32. Escrito para um dev backend estudando
+eletrônica, C e embarcado. As fases são executadas de cima para baixo; cada
+uma tem **Entrega** e **Critério de saída** verificáveis no Wokwi antes de
+usar hardware real. A arquitetura final está em
+[`docs/architecture.md`](docs/architecture.md).
 
-Legend: `[ ]` todo · `[x]` done · ⚠️ = common beginner mistake · 🧠 = concept to learn
+Legenda: `[ ]` pendente · `[x]` feito · ⚠️ = erro comum de iniciante · 🧠 = conceito para aprender
 
-Milestones:
+Marcos:
 
-- [x] M1 — Blink an LED in Wokwi (Phase 0–2)
-- [ ] M2 — Read a real sensor value and log it (Phase 3–4)
-- [ ] M3 — Drive a relay/valve safely from a sensor reading (Phase 4–5)
-- [ ] M4 — Publish telemetry over MQTT from Wokwi (Phase 6)
-- [ ] M5 — Host app stores + displays telemetry (Phase 7)
-- [ ] M6 — Same firmware runs on real hardware (Phase 8)
-- [ ] M7 — Fail-safe irrigation + CI green (Phase 9)
+- [x] M1 — Acender LED no Wokwi (fases 0–2)
+- [ ] M2 — Ler sensor real e logar (fases 3–4)
+- [ ] M3 — Irrigação com gatilhos, fail-safe, hora e display (fases 5–7)
+- [ ] M4 — Publicar telemetria MQTT no Wokwi (fase 8)
+- [ ] M5 — Host armazena + exibe telemetria (fase 9)
+- [ ] M6 — Mesmo firmware rodando em hardware real (fase 10)
+- [ ] M7 — Irrigação fail-safe + CI verde (fase 11)
 
 ---
 
-## Phase 0 — Environment & tooling
+## Fase 0 — Ambiente & tooling
 
-🧠 ESP-IDF is a toolchain + build system; `idf.py` wraps CMake/ninja/esptool.
-**Deliverable:** `idf.py --version` works in a fresh shell.
+🧠 ESP-IDF é um toolchain + sistema de build; `idf.py` encapsula CMake/ninja/esptool.
+**Entrega:** `idf.py --version` funciona num shell novo.
 
-- [x] Install ESP-IDF v5.5.5 (`~/esp-idf`), run `install.sh esp32`, auto-source `export.sh` from `~/.bashrc` 🧠
-- [x] Install VS Code + extensions: Espressif IDF, Wokwi Simulator, Serial Monitor
-- [x] Use standalone `wokwi-cli` (installed at `~/bin/wokwi-cli`) — `idf.py wokwi` needs IDF ≥ 6.0, skipped
-- [ ] Create Wokwi account; VS Code extension license (F1 -> "Wokwi: Request a new License")
-- [ ] `export WOKWI_CLI_TOKEN=...` (for CI later; add to `~/.bashrc`, never commit)
-- [x] Install Python 3.11+, `git` (Mosquitto deferred to Phase 7)
-- [x] Scaffold repo dirs: `firmware/`, `host/`, `docs/`, `emulation/`
+- [x] Instalar ESP-IDF v5.5.5 (`~/esp-idf`), rodar `install.sh esp32`
+- [x] Instalar VS Code + extensões: Espressif IDF, Wokwi Simulator, Serial Monitor
+- [x] Usar `wokwi-cli` standalone (instalado em `~/bin/wokwi-cli`) — `idf.py wokwi`
+      precisa IDF ≥ 6.0, descartado
+- [ ] Criar conta Wokwi; licença da extensão (F1 -> "Wokwi: Request a new License")
+- [ ] `export WOKWI_CLI_TOKEN=...` (para CI depois; no `~/.bashrc`, nunca commitar)
+- [x] Instalar Python 3.11+, `git` (Mosquitto adiada para a fase 8)
+- [x] Estruturar dirs do repo: `firmware/`, `host/`, `docs/`, `emulation/`
 - [x] `cd firmware && idf.py set-target esp32`
 
 ---
 
-## Phase 1 — Electronics fundamentals (breadboard + theory)
+## Fase 1 — Fundamentos de eletrônica (breadboard + teoria)
 
-🧠 Start in Wokwi; no risk of burning parts. Learn by measuring.
-**Deliverable:** a breadboard circuit with an LED + resistor + button that you can explain.
+🧠 Começar no Wokwi, sem risco de queimar peças. Aprender medindo.
+**Entrega:** circuito na breadboard com LED + resistor + botão, sabendo explicar.
 
-- [x] 🧠 Voltage (V), current (A), resistance (Ω), Ohm's law `V = I·R` → `docs/electronics-notes.md` §1
-- [x] 🧠 Power `P = V·I`; why a resistor limits current to protect an LED → §2
-- [x] 🧠 Digital logic: HIGH/LOW. **ESP32 GPIO = 3.3V, NOT 5V-tolerant** ⚠️ → §3
-- [x] 🧠 Ground: all parts must share a common ground (GND) ⚠️ → §4
-- [ ] Build an LED circuit in wokwi.com: ESP32 DevKit GPIO 4 → 330Ω resistor → red LED → GND (parts: `wokwi-led`, `wokwi-resistor`)
-- [ ] Build a button circuit in wokwi.com: pushbutton GPIO 23 → GND, enable internal pull-up (released=1, pressed=0) ⚠️ learn floating inputs
-- [x] 🧠 Current limits: each GPIO ≈ 12mA safe / 40mA absolute; never power motors from a GPIO ⚠️ → §5
-- [x] 🧠 Voltage divider (used later by resistive sensors and level shifting) → §6
-- [x] 🧠 Why inductive loads (pumps, solenoids) need a **flyback diode** → §8
-- [x] 🧠 Isolation: optocouplers/relays keep high voltage away from the ESP32 → §9
-- [x] ⚠️ Safety rule: never switch mains (110/220V) on a breadboard → §10
+- [x] 🧠 Tensão (V), corrente (A), resistência (Ω), lei de Ohm `V = I·R` → `docs/electronics-notes.md` §1
+- [x] 🧠 Potência `P = V·I`; por que um resistor limita corrente e protege o LED → §2
+- [x] 🧠 Lógica digital: HIGH/LOW. **GPIO do ESP32 = 3,3V, NÃO tolera 5V** ⚠️ → §3
+- [x] 🧠 GND: todas as peças precisam de massa comum ⚠️ → §4
+- [ ] Montar LED no wokwi.com: GPIO 4 → 330Ω → LED vermelho → GND (`wokwi-led`, `wokwi-resistor`)
+- [ ] Montar botão no wokwi.com: pushbutton GPIO 23 → GND, com pull-up interno (solto=1, apertado=0) ⚠️ aprender pin flutuando
+- [x] 🧠 Limites de corrente: ~12mA seguros / 40mA absoluto por GPIO; nunca ligar motor direto num GPIO ⚠️ → §5
+- [x] 🧠 Divisor de tensão (usado depois por sensores resistivos) → §6
+- [x] 🧠 Por que cargas indutivas (bombas, solenoides) precisam de **diodo flyback** → §8
+- [x] 🧠 Isolamento: optoacopladores/relés afastam alta tensão do ESP32 → §9
+- [x] ⚠️ Regra de segurança: nunca chavear 110/220V em breadboard → §10
 
-**Exit:** build both circuits in wokwi.com, then re-read `docs/electronics-notes.md` §2 + §7 and confirm you could explain them to someone else.
-
----
-
-## Phase 2 — C & ESP-IDF foundations (blink in Wokwi)
-
-🧠 C for backend devs: no GC, manual memory, pointers, `struct`, fixed-size types.
-**Deliverable:** ESP-IDF blink app running in Wokwi.
-
-- [x] 🧠 C crash course: types, arrays, pointers, `struct`, `enum`, headers, `static`
-- [x] 🧠 `esp_err_t` return codes + `ESP_ERROR_CHECK`; `ESP_LOGI/W/E` logging (used in `main/main.c`)
-- [x] Read ESP-IDF project anatomy: `main/CMakeLists.txt`, root `CMakeLists.txt`, `Kconfig`, `sdkconfig.defaults`
-- [x] 🧠 FreeRTOS basics: tasks (`xTaskCreate`), `vTaskDelay`, queues, semaphores (blink task loop uses `vTaskDelay`)
-- [x] Create `firmware/wokwi.toml` pointing at `build/flasher_args.json` + `build/smart_horta.elf`
-- [x] Create `firmware/diagram.json` (ESP32 DevKit + LED + resistor)
-- [x] Write blink code with `gpio_set_level` / `gpio_set_direction`; `idf.py build`
-- [x] Run via VS Code "Wokwi: Start Simulator" and confirm the LED blinks (visual check for you)
-- [x] Run `wokwi-cli . --timeout 10000 --expect-text "..."` and see it pass (`LED ON` found, 500 ms toggling confirmed)
-      **Exit:** M1 done; clean build + simulated blink. ✅
+**Critério de saída:** dois circuitos montados no wokwi.com + reler
+`docs/electronics-notes.md` §2 + §7.
 
 ---
 
-## Phase 3 — Digital sensors & GPIO inputs
+## Fase 2 — C & ESP-IDF (blink no Wokwi)
 
-🧠 Sensor "protocols": one-wire (DHT22), I2C, SPI. Start with one-wire.
-**Deliverable:** temperature + humidity logged to serial every 2s.
+🧠 C para devs backend: sem GC, memória manual, ponteiros, `struct`, tipos de tamanho fixo.
+**Entrega:** app blink rodando no Wokwi.
 
-- [ ] Add `wokwi-dht22` to `diagram.json`; wire VCC→3.3V, GND→GND, SDA→GPIO, + 10kΩ pull-up ⚠️
-- [ ] Add the DHT driver as an ESP-IDF component (use "DHT sensor library for ESPx" behavior) 🧠
-- [ ] Read temperature/humidity; validate against Wokwi sliders
-- [ ] 🧠 DHT22 min sampling interval ≈ 2s ⚠️
-- [ ] (optional) Add a pushbutton as a "manual override" input with debounce
-- [ ] Read a PIR/motion or float switch later if desired
-      **Exit:** stable readings; values change when you drag Wokwi sliders.
-
----
-
-## Phase 4 — Analog inputs, ADC & calibration
-
-🧠 Analog ≠ digital: the ADC converts 0–3.3V to a number (ESP32 12-bit: 0–4095).
-**Deliverable:** calibrated soil-moisture percentage from an analog sensor.
-
-- [ ] ⚠️ Key gotcha: **ADC2 is unavailable while WiFi is active** → use **ADC1 (GPIO32–GPIO39)**
-- [ ] 🧠 Configure ADC oneshot with 11dB attenuation for the full 0–3.3V range
-- [ ] 🧠 Only GPIO34–39 are input-only (no internal pull-ups); GPIO32/33 have pull-ups
-- [ ] Add `wokwi-potentiometer` (or `wokwi-slide-potentiometer`) as a soil-moisture proxy on GPIO34
-- [ ] Read raw value; map to 0–100% with `raw → map()` and clamp
-- [ ] 🧠 Understand sensor direction: resistive soil sensors often read HIGH = dry
-- [ ] Calibrate: record raw "air/dry" and "water/wet" values → store in `sdkconfig`/Kconfig
-- [ ] Add `wokwi-ntc-temperature-sensor` on another ADC1 pin (voltage divider) — optional
-- [ ] Note: real capacitive soil sensors are preferred over resistive (they corrode) 🧠
-      **Exit:** M2 done; moisture % tracks the slider and is calibrated.
+- [x] 🧠 C crash course: tipos, arrays, ponteiros, `struct`, `enum`, headers, `static`
+- [x] 🧠 `esp_err_t` + `ESP_ERROR_CHECK`; logs `ESP_LOGI/W/E` (usados em `main/main.c`)
+- [x] Anatomia de projeto ESP-IDF: `main/CMakeLists.txt`, `CMakeLists.txt` raiz, `Kconfig`, `sdkconfig.defaults`
+- [x] 🧠 FreeRTOS básico: tasks (`xTaskCreate`), `vTaskDelay`, queues, semáforos
+- [x] Criar `firmware/wokwi.toml` apontando para `build/flasher_args.json` + `build/smart_horta.elf`
+- [x] Criar `firmware/diagram.json` (DevKit + LED + resistor)
+- [x] Escrever blink com `gpio_set_level`/`gpio_set_direction`; `idf.py build`
+- [x] Rodar no VS Code "Wokwi: Start Simulator" e ver o LED piscar
+- [x] Rodar `wokwi-cli . --timeout 10000 --expect-text "..."` passando (`LED ON`)
+      **Critério de saída:** M1 ok; build limpo + blink simulado. ✅
 
 ---
 
-## Phase 5 — Actuators, power & fail-safe irrigation
+## Fase 3 — Sensores digitais & GPIO (DHT22 + botão)
 
-🧠 GPIOs control _signals_; external power drives _loads_. Keep them separate.
-**Deliverable:** sensor threshold opens/closes a valve in simulation, fails safe.
+🧠 "Protocolos" de sensor: one-wire (DHT22), I2C, SPI.
+**Entrega:** temperatura + humidade no log serial a cada 2 s ✅.
 
-- [ ] 🧠 Relay vs MOSFET vs SSR; why a relay/SSR isolates the load
-- [ ] Add `wokwi-relay-module` (default `npn` = **active-high**); control `IN` from a GPIO
-- [ ] ⚠️ Many real relay boards are active-LOW; confirm your board and invert logic if needed
-- [ ] ⚠️ A 3.3V GPIO cannot drive a 5V relay coil directly → use the relay board's driver/transistor
-- [ ] (alternative) Add `wokwi-servo` to model a ball valve; use LEDC PWM 🧠
-- [ ] Build a small state machine: IDLE → SENSING → IRRIGATING → COOLDOWN
-- [ ] 🧠 Implement a watchdog + timeout: close valve if a task hangs ⚠️
-- [ ] 🧠 Fail-safe on init error: valve must default to CLOSED (relay de-energized)
-- [ ] Add a manual override button that is ignored/queued safely
-- [ ] Define thresholds in Kconfig: moisture_low, moisture_high, max_run_time
-      **Exit:** M3 done; simulated valve opens below threshold and always closes on fault.
+- [x] Adicionar `wokwi-dht22` ao `diagram.json`; VCC→3.3V, GND→GND, SDA→GPIO15, + 10kΩ pull-up ⚠️
+- [x] Adicionar driver DHT como componente (biblioteca "DHT sensor library for ESPx" via `idf_component.yml`) 🧠
+- [x] Ler temperatura/humidade com `dht_read_float_data()`; validar comparando com os sliders do Wokwi
+- [x] 🧠 Intervalo mínimo de amostragem do DHT22 ≈ 2 s ⚠️ (`DHT_INTERVAL_MS = 2000`)
+- [x] (opcional) Botão como "manual override": GPIO 23 → GND com pull-up; edge-detect por polling de 10 ms
+      *(sem debounce dedicado ainda — revisar na fase 5)*
+- [ ] Float switch de nível: cobrir na fase 4 (entrada digital GPIO 33)
+
+**Critério de saída:** leitura estável; valores mudam ao arrastar sliders. ✅
 
 ---
 
-## Phase 6 — Networking, WiFi & MQTT (the simulation payoff)
+## Fase 4 — ADC, calibração & sensores analógicos
 
-🧠 MQTT = publish/subscribe via a broker; QoS levels; retained messages.
-**Deliverable:** telemetry published + commands received from Wokwi.
+🧠 Analógico ≠ digital: ADC converte 0–3,3V em número (ESP32 12-bit: 0–4095).
+**Entrega:** solo calibrado em %, chuva analógica + digital e bóia lidos.
 
-- [ ] 🧠 WiFi STA mode; connect `Wokwi-GUEST`, password `""`, channel 6
-- [ ] Add `esp-mqtt` (in-tree in ESP-IDF); configure broker URI
-- [ ] For Wokwi: use a public broker (`broker.hivemq.com:1883` or `test.mosquitto.org:1883`)
-- [ ] Publish JSON telemetry to `horta/<device_id>/telemetry` (temp, humidity, moisture, valve state)
-- [ ] Subscribe to `horta/<device_id>/cmd`; handle `{"valve":"on|off","duration_s":N}`
-- [ ] 🧠 Auto-reconnect: handle WiFi drop + MQTT disconnect events
-- [ ] 🧠 Keep payloads small; define a stable JSON schema in `docs/mqtt-topics.md`
-- [ ] Test with Wireshark: download `wokwi.pcap` and inspect the MQTT packets
-      **Exit:** M4 done; broker shows telemetry, commands toggle the valve.
-
----
-
-## Phase 7 — Host / Raspberry Pi (Python)
-
-🧠 Decouple ingestion, storage, and presentation.
-**Deliverable:** host stores telemetry and prints/serves latest state.
-
-- [ ] `python -m venv .venv && pip install paho-mqtt` → freeze to `host/requirements.txt`
-- [ ] Write `host/main.py`: MQTT subscriber that logs to SQLite
-- [ ] Define DB schema: `readings(ts, device_id, metric, value)` and `events(ts, type, detail)`
-- [ ] Implement command publisher + simple CLI (`valve on/off`, `status`)
-- [ ] (optional) dashboard: FastAPI + tiny HTML, or a curses/rich TUI
-- [ ] Point subscriber at Wokwi's public broker; run alongside the simulator
-- [ ] For a fully local loop: run Mosquitto, enable the **Wokwi Private Gateway**, set firmware broker to `host.wokwi.internal:1883`
-- [ ] Add `pytest host/` with a fake publisher/subscriber; assert parsing + DB writes
-      **Exit:** M5 done; `pytest host/` green and telemetry persisted.
+- [ ] ⚠️ Regra-chave: **ADC2 indisponível com WiFi ativo** → usar **ADC1 (GPIO32–39)**
+- [ ] 🧠 ADC oneshot com atenuação 11dB para faixa completa 0–3,3V
+- [ ] 🧠 GPIO34–39 são input-only (sem pull-ups); GPIO32/33 têm pull-ups
+- [ ] Adicionar sensor de humidade do solo (capacitivo no HW real; `wokwi-potentiometer`/`wokwi-slide-potentiometer` como proxy) no GPIO 34
+- [ ] Adicionar chuva analógica no GPIO 35 (proxy: potenciômetro) e chuva digital no GPIO 32 (módulo com pot-calibração; no Wokwi simular via pot/log)
+- [ ] Adicionar bóia de nível no GPIO 33 (entrada digital com pull-up)
+- [ ] Ler valores brutos; mapear para 0–100% com clamp
+- [ ] 🧠 Direção da leitura varia por modelo: calibrar sempre com "ar/seco" e "água/molhada" para definir o mapeamento
+- [ ] Calibrar: registrar raw de "ar/seco" e "água/molhado" → salvar em Kconfig
+- [ ] Opcional: `wokwi-ntc-temperature-sensor` em outro pino ADC1
+      **Critério de saída:** M2 ok; % do solo acompanha o slider e está calibrado.
 
 ---
 
-## Phase 8 — Real hardware bring-up
+## Fase 5 — Atuadores, fail-safe & motor de gatilhos da irrigação
 
-🧠 Simulation hides electrical reality: noise, power, cold joints, heat.
-**Deliverable:** the same firmware flashes and runs on a physical ESP32.
+🧠 GPIOs controlam *sinais*; fonte externa alimenta *cargas* — separar sempre.
+**Entrega:** máquina de estados da irrigação com os 4 gatilhos de LIGAR e os
+4 de DESLIGAR, fail-safe garantido.
 
-- [ ] BOM shopping list (put in `docs/bom.md`):
-   - [ ] ESP32 DevKitC (or DevKit v1)
-   - [ ] Capacitive soil-moisture sensor(s), DHT22
-   - [ ] Relay module or SSR rated for your valve voltage/current
-   - [ ] Solenoid valve (12V/24V DC) or pump + **flyback diode**
-   - [ ] Separate 12V/24V supply + buck converter for the ESP32 (5V)
-   - [ ] Resistors, jumpers, breadboard, multimeter
-- [ ] 🧠 Power architecture: one supply for logic, one for the load; **common ground**
-- [ ] ⚠️ Never drain the valve/pump through the ESP32 regulator; brownouts = random resets
-- [ ] Wire one sensor at a time; verify with the multimeter before powering ⚠️
-- [ ] `idf.py -p /dev/ttyUSB0 flash monitor`; confirm boot logs + WiFi connect
-- [ ] Re-calibrate ADC thresholds on real hardware (soil + water) and commit to Kconfig
-- [ ] Add `board.h` pin map; verify it matches `diagram.json`
-- [ ] Run a 24h soak test logging moisture + valve events
-      **Exit:** M6 done; real watering cycle triggered by real soil moisture.
-
----
-
-## Phase 9 — Reliability, CI & docs
-
-**Deliverable:** automated sim test + documentation a stranger can follow.
-
-- [ ] Add a Wokwi scenario (`.scenario.yaml`) that asserts boot + WiFi + one telemetry publish
-- [ ] GitHub Actions: build firmware + `wokwi-cli --expect-text` (free tier = 50 sim-min/month; keep short)
-- [ ] 🧠 Test fail-safe paths: force sensor failure, assert valve stays closed
-- [ ] Document wiring, calibration procedure, and MQTT contract in `docs/`
-- [ ] Add a "factory reset default" that closes valves on unexpected reboot
-- [ ] Record `WOKWI_CLI_TOKEN` as a CI secret (never commit it) ⚠️
-      **Exit:** M7 done; CI green and docs complete.
+- [x] 🧠 Relé vs MOSFET vs SSR; por que relé/SSR isola a carga
+- [ ] Usar `wokwi-relay-module` (default `npn` = **ativo-alto**; NO → LED "solenoide")
+- [ ] ⚠️ Confirmar lógica do módulo real depois (alguns são ativo-BAIXO)
+- [ ] 🧠 GPIO 3.3V não aciona bobina de relé 5V direto → usar o driver do módulo
+- [ ] Refatorar `main.c` em `components/` (`hal` + `board.h` primeiro; faltam o `hal`/`board.h` (fase 6) e os drivers de sensor (fase 4))
+- [ ] Máquina de estados: IDLE → IRRIGATING → COOLDOWN (`irrigation` = dono único do relé)
+- [ ] Motor de arbitragem — LIGAR: botão (T1), agenda (T2), limiar sensor (T3), comando MQTT (T4);
+      DESLIGAR: timer do usuário (S1), botão de novo (**S2 = prioridade máxima**),
+      evento de chuva (S3), comando MQTT (S4)
+- [ ] Rain-hold: evento de chuva fecha válvula e adia regas automáticas por N h (default 12 h)
+- [ ] Cooldown/histerese após cada rega (evita religar em cascata no limiar)
+- [ ] 🧠 Watchdog + timeout: fecha válvula se tarefa travar ⚠️
+- [ ] 🧠 Fail-safe no init com erro: válvula fecha (relé LOW)
+- [ ] Guardar fonte da rega (`btn/sched/sensor/cmd`) — usada no `event/irrigation` e no OLED
+- [ ] Thresholds em Kconfig: `soil_trig_pct`, `air_hum_trig_pct`, `max_run_s`
+      **Critério de saída:** M3 ok; limiar abre válvula e toda falha fecha.
 
 ---
 
-## Appendix A — ESP32 pin cheat-sheet
+## Fase 6 — Núcleo do firmware: NVS, agenda, SNTP & componentes
 
-- ⚠️ **Not 5V-tolerant** — logic is 3.3V.
-- ⚠️ GPIO6–11 are wired to SPI flash — **do not use**.
-- ⚠️ Input-only: GPIO34–39 (no pull-ups). ADC1 = GPIO32–39 (use for analog with WiFi on).
-- ⚠️ ADC2 pins conflict with WiFi.
-- ⚠️ Strapping pins (GPIO0, 2, 4, 5, 12, 15) affect boot; be careful what you attach.
-- UART0: TX=GPIO1, RX=GPIO3 (used by the serial monitor/flash).
-- Default I2C: SDA=GPIO21, SCL=GPIO22. Default DAC: GPIO25/26.
+🧠 Agenda semanal precisa de hora confiável: SNTP ao conectar WiFi; sem hora →
+agenda fica "aguardando". Construir os componentes `config`, `network`.
+**Entrega:** agenda sobrevive a reboot e roda sem WiFi.
 
-## Appendix B — Learning resources
+- [ ] Criar `components/config`: NVS com CRC — agenda (dias/hora/duração),
+      limiares, `max_run_s`, `rain_skip_h`, período de telemetria
+- [ ] Comando do botão pressionado por 10 s = reset de fábrica (valores default + NVS apagada)
+- [ ] Criar `components/network`: WiFi STA (SSID `Wokwi-GUEST` no Wokwi) com auto-reconnect
+- [ ] SNTP: sincronizar hora ao conectar; firmware segue rodando, com a agenda desabilitada até `sntp == ok`
+- [ ] Refatorar `main/main.c` para só init + coordenação lógica da aplicação nos components)
+      **Critério de saída:** reboot mantém agenda; sem WiFi a rega programada continua.
+
+---
+
+## Fase 7 — Display OLED SSD1306 (I2C)
+
+**Entrega:** OLED mostra temp/humidade, solo, estado da válvula e contagem regressiva.
+
+- [ ] Adicionar `wokwi-ssd1306` (I2C, SDA=21/SCL=22) ao `diagram.json`
+- [ ] Criar `components/ui_oled` (driver SSD1306, ex.: função `ui_oled_render`)
+- [ ] Tela 1 (normal): temp/humidade/solo + estado ("REGANDO 03:32" / "Aguardando hora")
+- [ ] Atualizar a ~1 Hz (I2C é lento; não bloquear tasks de leitura)
+- [ ] Mostrar erros: código piscando no LED de status + mensagem no OLED
+      **Critério de saída:** dados ao vivo no OLED durante simulação.
+
+---
+
+## Fase 8 — Networking, WiFi & MQTT (payoff da simulação)
+
+🧠 MQTT = pub/sub via broker; níveis de QoS; mensagens retained.
+**Entrega:** telemetria publicada + comandos recebidos no Wokwi.
+
+- [ ] 🧠 WiFi STA; conectar `Wokwi-GUEST`, senha `""`, canal 6
+- [ ] Adicionar `esp-mqtt` (in-tree no ESP-IDF); configurar URI do broker
+- [ ] Wokwi: broker público (`broker.hivemq.com:1883` ou `test.mosquitto.org:1883`)
+- [ ] Implementar tópicos conforme [`docs/mqtt-topics.md`](docs/mqtt-topics.md):
+      `telemetry` (QoS0), `status` + `available`/last-will (retained),
+      `event/rain|irrigation|alert`, `cmd/irrigation|schedule|config|get`, `ack`
+- [ ] Evento de chuva → fecha válvula via state machine + publica `event/rain`
+- [ ] 🧠 Auto-reconnect: tratar queda de WiFi e desconexão MQTT
+- [ ] JSON pequeno e estável; tokens de comando com `req_id` + ack (~3 s timeout)
+- [ ] Testar com Wireshark: baixar `wokwi.pcap` e inspecionar os pacotes MQTT
+      **Critério de saída:** M4 ok; broker mostra telemetria; comandos acionam válvula.
+
+---
+
+## Fase 9 — Host/Raspberry Pi (Python): subscriber + dashboard web
+
+🧠 Separar ingestão, armazenamento e apresentação.
+**Entrega:** host armazena telemetria e serve dashboard web do celular/PC.
+
+- [ ] `python -m venv .venv && pip install paho-mqtt flask` → `host/requirements.txt`
+- [ ] `host/`: subscriber QoS1 → SQLite (`readings(ts, device_id, metric, value)`,
+      `events(ts, type, detail)`)
+- [ ] Dashboard Flask: dados ao vivo + histórico (gráficos Chart.js)
+- [ ] Agenda no web: dias × hora × duração → POST → publish MQTT `cmd/schedule`
+- [ ] Config no web: limiares/duração → publish `cmd/config`
+- [ ] Botões manual on/off (com `duration_s`) → publish `cmd/irrigation`
+- [ ] CLI (`python -m host.main`: `valve on|off`, `status`, `schedule set ...`)
+- [ ] Apontar subscriber para o broker público do Wokwi (co-simulação)
+- [ ] Loop 100% local: rodar Mosquitto (`emulation/mosquitto.conf`), ativar
+      **Wokwi Private Gateway**, broker do fw = `host.wokwi.internal:1883`
+- [ ] Segurança: Mosquitto escuta apenas na LAN; acesso externo só depois com TLS/VPS (ver mqtt-topics.md §6)
+- [ ] `pytest host/` com publisher/subscriber fake: parsing + gravação + rotas da web
+      **Critério de saída:** M5 ok; `pytest` verde e telemetria persistida.
+
+---
+
+## Fase 10 — Hardware real
+
+🧠 A simulação esconde ruído, limites de alimentação, solda fria, calor.
+**Entrega:** mesmo firmware no ESP32 físico.
+
+- [ ] Lista de compras em `docs/bom.md`:
+   - [ ] ESP32 DevKitC (ou DevKit v1)
+   - [ ] OLED SSD1306, DHT22, sensor capacitivo de solo
+   - [ ] Sensor de chuva (módulo de trilha, saída AO + DO)
+   - [ ] Bóia de nível do reservatório
+   - [ ] (opcional, backlog) Sensor de vazão YF-S201
+   - [ ] Módulo relé/SSR adequado à válvula (12/24V DC); solenoide + **diodo flyback**
+   - [ ] Fonte 12/24V separada + buck p/ ESP32 (5V) + **bomba p/ reservatório**
+   - [ ] Resistores, jumpers, breadboard, multímetro
+- [ ] ⚠️ Confirmar lógica de ativação do módulo relé real e corrente da carga
+- [ ] 🧠 Arquitetura de energia: fonte da lógica separada da carga; **massa comum**
+- [ ] ⚠️ Nunca puxar bomba/válvula pelo regulador do ESP32; brownout = resets aleatórios
+- [ ] Ligar um sensor por vez; medir com multímetro energizando primeiro ⚠️
+- [ ] `idf.py -p /dev/ttyUSB0 flash monitor`; conferir boot + WiFi
+- [ ] Recalibrar os limiares no HW real (solo, chuva, água) e commitar em Kconfig
+- [ ] `board.h` conferido contra o `diagram.json` real
+- [ ] Teste de resistência de 24 h logando umidade + eventos de válvula
+      **Critério de saída:** M6 ok; rega real disparada pelo solo real.
+
+---
+
+## Fase 11 — Confiabilidade, CI & docs
+
+**Entrega:** teste de simulação automatizado + docs que um estranho entenda.
+
+- [ ] Cenário Wokwi (`.scenario.yaml`) afirmando boot + WiFi + 1 telemetria
+- [ ] GitHub Actions: build + `wokwi-cli --expect-text` (free tier 50 sim-min/mês; testes curtos)
+- [ ] 🧠 Testes de fail-safe: forçar falha de sensor, afirmar válvula fechada
+- [ ] Documentar wiring/calibração/contrato MQTT em `docs/`
+- [ ] "Factory reset" fechando válvulas em reboot inesperado
+- [ ] `WOKWI_CLI_TOKEN` como secret de CI (nunca commitar) ⚠️
+      **Critério de saída:** M7 ok; CI verde e docs completos.
+
+---
+
+## Backlog / funcionalidades futuras
+
+Não bloqueia nenhuma fase acima; captadas na revisão da arquitetura
+(2026-10-05) — detalhes em [`docs/architecture.md` §11](docs/architecture.md#11-backlog--funcionalidades-futuras).
+
+- [ ] Múltiplas zonas (2–4 válvulas fracionadas + agenda por zona)
+- [ ] Sensor de vazão (YF-S201): litros por rega; alerta de vazamento
+- [ ] Integração Home Assistant (MQTT discovery)
+- [ ] Notificações via host (Telegram: reservatório baixo, falha, geada < ~5 °C)
+- [ ] OTA update por WiFi (esp_https_ota)
+- [ ] Histórico/gráficos em profundidade (evapotranspiração, curvas de humidade)
+- [ ] Autenticação na web dashboard (senha; necessário para acesso externo)
+- [ ] Modo noturno/fora de pico (irrigar de madrugada, água/energia mais barata)
+
+---
+
+## Apêndice A — Guia rápido de pinos ESP32
+
+- ⚠️ **Não tolera 5V** — lógica é 3,3V.
+- ⚠️ GPIO6–11 ligados à SPI flash — **não usar**.
+- ⚠️ Input-only: GPIO34–39 (sem pull-ups). ADC1 = GPIO32–39 (analógico com WiFi on).
+- ⚠️ Pinos de ADC2 conflitam com WiFi.
+- ⚠️ Strapping pins (GPIO0, 2, 4, 5, 12, 15) afetam o boot — cuidado.
+- UART0: TX=GPIO1, RX=GPIO3 (serial monitor/flash).
+- I2C default: SDA=GPIO21, SCL=GPIO22. DAC default: GPIO25/26.
+
+## Apêndice B — Recursos de estudo
 
 - ESP-IDF Programming Guide + API Reference
-- Wokwi docs (ESP32, WiFi, Parts, CLI)
+- Docs do Wokwi (ESP32, WiFi, Parts, CLI)
 - "DHT sensor library for ESPx"
-- Beginner electronics: Ohm's law + voltage dividers + relay/transistor tutorials
+- Eletrônica básica: lei de Ohm + divisores de tensão + tutoriais de relé/transistor
