@@ -7,8 +7,9 @@ intended layout and commands.
 
 ## Stack (decided)
 - Firmware: ESP-IDF (C, CMake, `idf.py`), target `esp32`. Installed at `~/esp-idf`
-  (v5.5.5); toolchain in `~/.espressif`. Source `~/esp-idf/export.sh` in each new
-  shell (auto-sourced from `~/.bashrc`).
+  (v5.5.5); toolchain in `~/.espressif`. NOT auto-sourced from `~/.bashrc`:
+  run `idfenv` (alias in `~/.bashrc`) to activate in each new shell; see
+  `README.md` for why.
 - Simulation: Wokwi — the only option that emulates ESP32 WiFi + MQTT end to end.
   Renode was evaluated and rejected: it has no ESP32 SoC model (only a generic
   `xtensa-sample-controller`); QEMU runs ESP-IDF but has no WiFi.
@@ -26,7 +27,8 @@ intended layout and commands.
 - `docs/` — wiring, calibration, MQTT topic reference.
 
 ## Commands
-Firmware (run from `firmware/`; source ESP-IDF `export.sh` in each new shell):
+Firmware (run `idfenv` once per new shell to activate ESP-IDF; then from
+`firmware/`):
 - `idf.py set-target esp32`
 - `idf.py build`                      # required before any simulation
 - `idf.py -p /dev/ttyUSB0 flash monitor`
