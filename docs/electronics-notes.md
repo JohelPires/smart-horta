@@ -109,6 +109,41 @@ wiring (then released = LOW, pressed = HIGH).
 Phase 1 recipe (wokwi.com): `wokwi-pushbutton` between GPIO 23 and GND,
 `gpio_pullup_en` on the pin — released prints 1, pressed prints 0.
 
+### Troubleshooting: the button circuit (learned in practice)
+
+Wokwi buttons have **4 pins = 2 pairs**. Each pair is already joined inside the
+part; pressing bridges the two pairs:
+
+```
+   top:    1.l ●────────────● 1.r      (pair 1 — always connected)
+                 [ press = bridge ]
+   bottom: 2.l ●────────────● 2.r      (pair 2 — always connected)
+```
+
+Rule: **one wire on a top pin, one on a bottom pin** (or any `1.x` + any `2.x`).
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Always `1`, never changes | Far leg wired to 3.3 V while using `INPUT_PULLUP` | Move far leg to **GND** |
+| Always `1` | GPIO 34–39 (no pull-up; `INPUT_PULLUP` does nothing) | Use GPIO 23/22/21/18/19 or external 10 kΩ |
+| Random flicker | Bare `INPUT`, floating antenna | `INPUT_PULLUP` or external pull resistor |
+| Press does nothing | Both wires on the same pair | One wire per pair |
+| Opposite of expected | Pull-up inverts logic: **pressed = LOW** | Logically correct; invert interpretation |
+
+The Wokwi button also simulates **contact bounce** (`bounce: "0"` attr to turn
+off) and accepts a keyboard shortcut (`"key": "q"`), and `"xray": "1"` shows the
+internal contacts.
+
+**Serial monitor gotcha:** a `loop()` without any `delay()` runs thousands of
+times per second; `Serial.println` floods the terminal into an unreadable blur
+(or it may look frozen/blank). Add `delay(200)`. Blank monitor checklist:
+`Serial.begin(115200)` present → simulation actually running (green ▶) →
+editing `sketch.ino` not another file → Arduino (not MicroPython) template →
+check the console for compile errors.
+
+Debug any GPIO input with the **LED mirror** (bypasses serial entirely):
+`digitalWrite(4, digitalRead(23));` — the external LED directly follows the pin.
+
 ## 8. Flyback diode: inductive loads bite back
 
 A pump, solenoid valve or relay coil is an **inductor**. While energized it

@@ -7,7 +7,7 @@ and **Exit criteria** you can verify in Wokwi before touching real hardware.
 Legend: `[ ]` todo · `[x]` done · ⚠️ = common beginner mistake · 🧠 = concept to learn
 
 Milestones:
-- [ ] M1 — Blink an LED in Wokwi (Phase 0–2)
+- [x] M1 — Blink an LED in Wokwi (Phase 0–2)
 - [ ] M2 — Read a real sensor value and log it (Phase 3–4)
 - [ ] M3 — Drive a relay/valve safely from a sensor reading (Phase 4–5)
 - [ ] M4 — Publish telemetry over MQTT from Wokwi (Phase 6)
@@ -53,16 +53,16 @@ Milestones:
 ## Phase 2 — C & ESP-IDF foundations (blink in Wokwi)
 🧠 C for backend devs: no GC, manual memory, pointers, `struct`, fixed-size types.
 **Deliverable:** ESP-IDF blink app running in Wokwi.
-- [ ] 🧠 C crash course: types, arrays, pointers, `struct`, `enum`, headers, `static`
-- [ ] 🧠 `esp_err_t` return codes + `ESP_ERROR_CHECK`; `ESP_LOGI/W/E` logging
-- [ ] Read ESP-IDF project anatomy: `main/CMakeLists.txt`, root `CMakeLists.txt`, `Kconfig`, `sdkconfig.defaults`
-- [ ] 🧠 FreeRTOS basics: tasks (`xTaskCreate`), `vTaskDelay`, queues, semaphores
-- [ ] Create `firmware/wokwi.toml` pointing at `build/flasher_args.json` + `build/smart_horta.elf`
-- [ ] Create `firmware/diagram.json` (ESP32 DevKit + LED + resistor)
-- [ ] Write blink code with `gpio_set_level` / `gpio_set_direction`; `idf.py build`
-- [ ] Run via VS Code "Wokwi: Start Simulator" and confirm the LED blinks
-- [ ] Run `wokwi-cli . --timeout 10000 --expect-text "..."` and see it pass
-**Exit:** M1 done; clean build + simulated blink.
+- [x] 🧠 C crash course: types, arrays, pointers, `struct`, `enum`, headers, `static`
+- [x] 🧠 `esp_err_t` return codes + `ESP_ERROR_CHECK`; `ESP_LOGI/W/E` logging (used in `main/main.c`)
+- [x] Read ESP-IDF project anatomy: `main/CMakeLists.txt`, root `CMakeLists.txt`, `Kconfig`, `sdkconfig.defaults`
+- [x] 🧠 FreeRTOS basics: tasks (`xTaskCreate`), `vTaskDelay`, queues, semaphores (blink task loop uses `vTaskDelay`)
+- [x] Create `firmware/wokwi.toml` pointing at `build/flasher_args.json` + `build/smart_horta.elf`
+- [x] Create `firmware/diagram.json` (ESP32 DevKit + LED + resistor)
+- [x] Write blink code with `gpio_set_level` / `gpio_set_direction`; `idf.py build`
+- [ ] Run via VS Code "Wokwi: Start Simulator" and confirm the LED blinks (visual check for you)
+- [x] Run `wokwi-cli . --timeout 10000 --expect-text "..."` and see it pass (`LED ON` found, 500 ms toggling confirmed)
+**Exit:** M1 done; clean build + simulated blink. ✅
 
 ---
 
