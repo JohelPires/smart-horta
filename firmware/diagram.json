@@ -5,54 +5,69 @@
    "parts": [
       { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": -24.1, "left": -101, "attrs": {} },
       {
-         "type": "wokwi-led",
-         "id": "led1",
-         "top": -42,
-         "left": -168.6,
-         "attrs": { "color": "red", "flip": "1", "label": "blink" }
+         "type": "wokwi-resistor",
+         "id": "r-dht-pullup",
+         "top": 321.6,
+         "left": 76.25,
+         "rotate": 180,
+         "attrs": { "value": "10000" }
       },
       {
          "type": "wokwi-resistor",
-         "id": "r1",
-         "top": 33.6,
-         "left": -192.55,
-         "rotate": 90,
+         "id": "r-sol",
+         "top": -207.25,
+         "left": 182.4,
          "attrs": { "value": "330" }
       },
       {
          "type": "wokwi-led",
+         "id": "led-sol",
+         "top": -234,
+         "left": 263.4,
+         "attrs": { "color": "orange", "flip": "1", "label": "solenoid" }
+      },
+      {
+         "type": "wokwi-led",
          "id": "led-irrigar",
-         "top": 25.2,
-         "left": 157.8,
+         "top": 15.6,
+         "left": 205.8,
          "attrs": { "color": "blue", "flip": "1", "label": "irrigar" }
       },
       {
          "type": "wokwi-resistor",
          "id": "r2",
-         "top": 24,
-         "left": 124.25,
-         "rotate": 90,
+         "top": 51.95,
+         "left": 105.6,
          "attrs": { "value": "330" }
       },
       {
          "type": "wokwi-pushbutton",
          "id": "btn-irrigar",
-         "top": -80.2,
-         "left": 67.2,
+         "top": -51.4,
+         "left": 211.2,
          "attrs": { "color": "green", "label": "manual", "key": "i" }
       },
-      { "type": "wokwi-dht22", "id": "dht1", "top": -162.9, "left": -255, "attrs": {} },
-      { "type": "wokwi-relay-module", "id": "relay1", "top": -163, "left": -134.4, "attrs": {} }
+      { "type": "wokwi-dht22", "id": "dht1", "top": 153.9, "left": 177, "attrs": {} },
+      { "type": "wokwi-relay-module", "id": "relay1", "top": -220.6, "left": 19.2, "attrs": {} }
    ],
    "connections": [
       ["esp:TX0", "$serialMonitor:RX", "", []],
       ["esp:RX0", "$serialMonitor:TX", "", []],
-      ["esp:GND.1", "led1:C", "black", ["h66.9", "v-105.7"]],
-      ["led1:A", "r1:1", "green", ["h-9.6", "v19.2"]],
-      ["r1:2", "esp:D4", "green", ["h0", "v8.4"]],
-      ["esp:D18", "r2:1", "green", ["h-30", "v15.4"]],
+      ["esp:3V3", "dht1:VCC", "red", ["h-28.8", "v-9.6"]],
+      ["dht1:GND", "esp:GND.1", "black", ["v9.6", "h-105.6", "v-153.5"]],
+      ["dht1:SDA", "esp:D15", "green", ["h20", "v96", "h-19.2", "h-202"]],
+      ["dht1:SDA", "r-dht-pullup:1", "green", ["h10", "v48"]],
+      ["r-dht-pullup:2", "esp:3V3", "red", ["h0", "v106"]],
+      ["esp:D18", "r2:1", "green", ["h66.9", "v-27.95"]],
       ["r2:2", "led-irrigar:A", "green", ["h0", "v8.4"]],
       ["led-irrigar:C", "esp:GND.1", "black", ["h10", "v100.2"]],
+      ["esp:D18", "relay1:IN", "green", ["h-19.2", "v-48"]],
+      ["esp:VIN", "relay1:VCC", "red", ["h28.8", "v-125"]],
+      ["relay1:GND", "esp:GND.1", "black", ["v210", "h-67.2"]],
+      ["esp:VIN", "relay1:COM", "orange", ["h19.2", "v-38.4"]],
+      ["relay1:NO", "r-sol:1", "orange", ["v19.2", "h49.2", "v-40.2"]],
+      ["r-sol:2", "led-sol:A", "orange", ["h0", "v8.4"]],
+      ["led-sol:C", "esp:GND.1", "black", ["h10", "v153.6"]],
       ["btn-irrigar:1.l", "esp:D23", "green", ["h-25", "v-20"]],
       ["btn-irrigar:2.l", "esp:GND.1", "black", ["h-32", "v60"]]
    ],

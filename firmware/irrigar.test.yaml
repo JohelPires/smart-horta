@@ -1,0 +1,17 @@
+name: 'manual irrigation pulse'
+version: 1
+author: 'smart-horta'
+steps:
+  - delay: 500ms
+  - set-control:
+      part-id: btn-irrigar
+      control: pressed
+      value: 1
+  - delay: 50ms
+  - set-control:
+      part-id: btn-irrigar
+      control: pressed
+      value: 0
+  - wait-serial: 'IRRIGAR ON'
+  - delay: 5200ms
+  - wait-serial: 'IRRIGAR OFF'
